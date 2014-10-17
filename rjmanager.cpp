@@ -7,7 +7,7 @@
 #include<QImageReader>
 #include <QBuffer>
 #include <QDir>
-
+#include <QFileDialog>
 size_t callbackfunction(void *ptr, size_t size, size_t nmemb, void* userdata)
 {
     int len= size*nmemb;
@@ -136,6 +136,10 @@ void RJManager::on_copyUrlButton_clicked()
 
 //http://openhome.cc/Gossip/Qt4Gossip/QTreeWidgetQTreeWidgetItem.html
 void RJManager::listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent) {
+    if(parent.fileName()=="!"){
+        qDebug()<<"true";
+    }
+
     QDir dir;
     dir.setPath(parent.filePath());
     dir.setFilter(QDir::Files | QDir::Dirs | QDir::NoSymLinks);
@@ -147,39 +151,81 @@ void RJManager::listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent) {
         QFileInfo fileInfo = fileList.at(i);
         QStringList fileColumn;
         fileColumn.append(fileInfo.fileName());
+        fileColumn.append(fileInfo.path());
         if (fileInfo.fileName() == "." || fileInfo.fileName() == ".." ); // nothing
         else if(fileInfo.isDir()) {
             QTreeWidgetItem *child = new QTreeWidgetItem(fileColumn);
-            child->setCheckState(0, Qt::Checked);
             parentWidgetItem->addChild(child);
             // 查詢子目錄
             listFile(child, fileInfo);
         }
         else {
             QTreeWidgetItem *child = new QTreeWidgetItem(fileColumn);
-            child->setCheckState(0, Qt::Checked);
+            QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
+
+            int pos = 0;
+            if((pos = rjname.indexIn(fileInfo.fileName(), pos)) != -1) {
+                child->setCheckState(0, Qt::Checked);
+            }
+            else{
+                child->setCheckState(0, Qt::Unchecked);
+            }
             parentWidgetItem->addChild(child);
         }
     }
 }
 void RJManager::on_pushButton_3_clicked()
 {
-    //ui->treeWidget
+    ui->treeWidget->clear();
+    QString directory = QFileDialog::getExistingDirectory(this,
+                                                          tr("Find Files"), QDir::currentPath());
 
+    ui->dirPathLineEdit->setText(directory);
     // 設定欄位名稱
     QStringList columnTitle;
     columnTitle.append("Name");
+    columnTitle.append("Path");
     ui->treeWidget->setHeaderLabels(columnTitle);
 
     // 查詢的目錄
-    QFileInfo fileInfo("E:\\GALGAME");
+    QFileInfo fileInfo(directory);
     QStringList fileColumn;
     fileColumn.append(fileInfo.fileName());
 
     QTreeWidgetItem *dir = new QTreeWidgetItem(fileColumn);
-    dir->setCheckState(0, Qt::Checked); // 設定可核取的方塊
+    //dir->setCheckState(0, Qt::Unchecked); // 設定可核取的方塊
     ui->treeWidget->addTopLevelItem(dir);
 
     // 查詢目錄
     listFile(dir, fileInfo);
+    //ui->treeWidget->expandAll();
+
+}
+
+void RJManager::on_treeWidget_expanded(const QModelIndex &index)
+{
+    for(int i=0;i<ui->treeWidget->columnCount();i++)
+        ui->treeWidget->resizeColumnToContents(i);
+}
+void childitem(QTreeWidgetItem &pitem)
+{
+    //qDebug()<<"  1  ";
+    for( int i = 0; i < pitem.childCount(); ++i )
+    {
+        QTreeWidgetItem *item = pitem.child(i);
+        if(item->childCount()>0)
+            childitem(*item);
+        if(item->checkState(0)==Qt::Checked)
+            qDebug()<<item->text(0);
+    }
+}
+
+void RJManager::on_pushButton_4_clicked()
+{
+    for( int i = 0; i < ui->treeWidget->topLevelItemCount(); ++i )
+    {
+        QTreeWidgetItem *item = ui->treeWidget->topLevelItem( i );
+        childitem(*item);
+    }
+
 }
