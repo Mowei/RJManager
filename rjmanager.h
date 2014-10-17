@@ -4,6 +4,7 @@
 #include <QMainWindow>
 #include <QByteArray>
 #include <QString>
+#include <QClipboard>
 
 namespace Ui {
 class RJManager;
@@ -24,6 +25,10 @@ public:
 private slots:
     void on_pushButton_clicked();
 
+    void on_copyFileNameButton_clicked();
+
+    void on_copyUrlButton_clicked();
+
 private:
     Ui::RJManager *ui;
 
@@ -33,6 +38,8 @@ private:
     QString RJNumber;
     QString saleDate;
     QString gameName;
+
+    QClipboard *clipboard;
 };
 
 #endif // RJMANAGER_H

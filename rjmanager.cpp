@@ -6,6 +6,8 @@
 #include <QDebug>
 #include<QImageReader>
 #include <QBuffer>
+
+
 size_t callbackfunction(void *ptr, size_t size, size_t nmemb, void* userdata)
 {
     int len= size*nmemb;
@@ -20,6 +22,7 @@ RJManager::RJManager(QWidget *parent) :
     ui(new Ui::RJManager)
 {
     ui->setupUi(this);
+    clipboard = QApplication::clipboard();
 }
 
 RJManager::~RJManager()
@@ -36,9 +39,9 @@ void RJManager::on_pushButton_clicked()
     int pos = 0;
     if((pos = rjname.indexIn(name, pos)) != -1) {
         srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+rjname.cap(1)+".html";
+        DlsitePageAnalysis(srcUrl);
     }
 
-    DlsitePageAnalysis(srcUrl);
 
 }
 QByteArray RJManager::CurlDownload(QString srcUrl){
@@ -86,9 +89,7 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
     }
     pos = 0;
     if((pos = date.indexIn(str, pos)) != -1) {
-
         saleDate=date.cap(1)+date.cap(2)+date.cap(3);
-        //qDebug()<<saleDate;
     }
 
     pos = 0;
@@ -103,7 +104,6 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
     pos = 0;
     if((pos = mainImg.indexIn(str, pos)) != -1) {
         GJImg="http:"+mainImg.cap(1);
-        qDebug()<<GJImg;
     }
 
     qDebug()<<gameName;
@@ -123,4 +123,14 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
     ui->FileNameLineEdit->setText("["+groupName+"]["+saleDate+"]["+RJNumber+"]"+gameName);
 
 
+}
+
+void RJManager::on_copyFileNameButton_clicked()
+{
+    clipboard->setText(ui->FileNameLineEdit->text());
+}
+
+void RJManager::on_copyUrlButton_clicked()
+{
+    clipboard->setText(ui->UrlLineEdit->text());
 }
