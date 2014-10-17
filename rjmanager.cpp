@@ -6,7 +6,7 @@
 #include <QDebug>
 #include<QImageReader>
 #include <QBuffer>
-
+#include <QDir>
 
 size_t callbackfunction(void *ptr, size_t size, size_t nmemb, void* userdata)
 {
@@ -28,21 +28,6 @@ RJManager::RJManager(QWidget *parent) :
 RJManager::~RJManager()
 {
     delete ui;
-}
-
-void RJManager::on_pushButton_clicked()
-{
-    QString name,srcUrl;
-    name =ui->RJNameLineEdit->text();
-    QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
-
-    int pos = 0;
-    if((pos = rjname.indexIn(name, pos)) != -1) {
-        srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+rjname.cap(1)+".html";
-        DlsitePageAnalysis(srcUrl);
-    }
-
-
 }
 QByteArray RJManager::CurlDownload(QString srcUrl){
     qDebug()<<srcUrl;
@@ -66,7 +51,21 @@ QByteArray RJManager::CurlDownload(QString srcUrl){
     }
     return tempfile;
 }
+//----------------------------Tab1----------------------------//
+void RJManager::on_pushButton_clicked()
+{
+    QString name,srcUrl;
+    name =ui->RJNameLineEdit->text();
+    QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
 
+    int pos = 0;
+    if((pos = rjname.indexIn(name, pos)) != -1) {
+        srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+rjname.cap(1)+".html";
+        DlsitePageAnalysis(srcUrl);
+    }
+
+
+}
 void RJManager::DlsitePageAnalysis(QString srcUrl){
 
     int pos;
@@ -124,7 +123,6 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
 
 
 }
-
 void RJManager::on_copyFileNameButton_clicked()
 {
     clipboard->setText(ui->FileNameLineEdit->text());
@@ -133,4 +131,55 @@ void RJManager::on_copyFileNameButton_clicked()
 void RJManager::on_copyUrlButton_clicked()
 {
     clipboard->setText(ui->UrlLineEdit->text());
+}
+//----------------------------Tab2----------------------------//
+
+//http://openhome.cc/Gossip/Qt4Gossip/QTreeWidgetQTreeWidgetItem.html
+void RJManager::listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent) {
+    QDir dir;
+    dir.setPath(parent.filePath());
+    dir.setFilter(QDir::Files | QDir::Dirs | QDir::NoSymLinks);
+    dir.setSorting(QDir::DirsFirst | QDir::Name);
+
+    const QFileInfoList fileList = dir.entryInfoList();
+
+    for (int i = 0; i < fileList.size(); i++) {
+        QFileInfo fileInfo = fileList.at(i);
+        QStringList fileColumn;
+        fileColumn.append(fileInfo.fileName());
+        if (fileInfo.fileName() == "." || fileInfo.fileName() == ".." ); // nothing
+        else if(fileInfo.isDir()) {
+            QTreeWidgetItem *child = new QTreeWidgetItem(fileColumn);
+            child->setCheckState(0, Qt::Checked);
+            parentWidgetItem->addChild(child);
+            // 查詢子目錄
+            listFile(child, fileInfo);
+        }
+        else {
+            QTreeWidgetItem *child = new QTreeWidgetItem(fileColumn);
+            child->setCheckState(0, Qt::Checked);
+            parentWidgetItem->addChild(child);
+        }
+    }
+}
+void RJManager::on_pushButton_3_clicked()
+{
+    //ui->treeWidget
+
+    // 設定欄位名稱
+    QStringList columnTitle;
+    columnTitle.append("Name");
+    ui->treeWidget->setHeaderLabels(columnTitle);
+
+    // 查詢的目錄
+    QFileInfo fileInfo("E:\\GALGAME");
+    QStringList fileColumn;
+    fileColumn.append(fileInfo.fileName());
+
+    QTreeWidgetItem *dir = new QTreeWidgetItem(fileColumn);
+    dir->setCheckState(0, Qt::Checked); // 設定可核取的方塊
+    ui->treeWidget->addTopLevelItem(dir);
+
+    // 查詢目錄
+    listFile(dir, fileInfo);
 }

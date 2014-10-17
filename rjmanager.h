@@ -5,6 +5,8 @@
 #include <QByteArray>
 #include <QString>
 #include <QClipboard>
+#include <QTreeWidget>
+#include <QFileInfo>
 
 namespace Ui {
 class RJManager;
@@ -20,6 +22,8 @@ public:
 
     QByteArray CurlDownload(QString srcUrl);
     void DlsitePageAnalysis(QString name);
+    //Tab2
+    void listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent);
 
 
 private slots:
@@ -28,6 +32,8 @@ private slots:
     void on_copyFileNameButton_clicked();
 
     void on_copyUrlButton_clicked();
+
+    void on_pushButton_3_clicked();
 
 private:
     Ui::RJManager *ui;
