@@ -1,3 +1,3 @@
-RJManager
+ï»¿RJManager
 ===
-dlsiteºô¤W¦P¤H¹CÀ¸ºŞ²z
+dlsiteç¶²ä¸ŠåŒäººéŠæˆ²ç®¡ç†

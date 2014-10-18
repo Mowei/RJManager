@@ -22,9 +22,11 @@ public:
     explicit RJManager(QWidget *parent = 0);
     ~RJManager();
 
+    //Tab1
     QString findRJ(QRegExp rx,QString src);
     QByteArray CurlDownload(QString srcUrl);
     void DlsitePageAnalysis(QString name);
+    void ShowTab1();
     //Tab2
     void listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent);
     void childitem(QTreeWidgetItem &pitem);
@@ -47,10 +49,12 @@ private:
 
 private:
     //QByteArray tempfile;
+    QString srcUrl;
     QString groupName;
     QString RJNumber;
     QString saleDate;
     QString gameName;
+    QString GJImg;
 
     QClipboard *clipboard;
 

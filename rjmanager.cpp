@@ -77,7 +77,7 @@ QString RJManager::findRJ(QRegExp rx,QString src)
 }
 void RJManager::on_pushButton_clicked()
 {
-    QString name,srcUrl;
+    QString name;
     name =ui->RJNameLineEdit->text().toUpper();
     QString RJNumber;
     QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
@@ -85,6 +85,7 @@ void RJManager::on_pushButton_clicked()
         srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+RJNumber+".html";
         DlsitePageAnalysis(srcUrl);
     }
+    ShowTab1();
 
 }
 void RJManager::DlsitePageAnalysis(QString srcUrl){
@@ -94,7 +95,8 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
     RJNumber="";
     saleDate="";
     gameName="";
-    QString GJImg;
+    GJImg="";
+
     QString str(CurlDownload(srcUrl));
 
     QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
@@ -113,10 +115,9 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
         saleDate=date.cap(1)+date.cap(2)+date.cap(3);
     }
 
-    qDebug()<<gameName;
-    ui->label->setText(gameName);
-
-    //GJImg ="http://img.dlsite.jp/modpub/images2/work/doujin/RJ143000/RJ142572_img_main.jpg";
+}
+void RJManager::ShowTab1()
+{
     QByteArray tempfile=CurlDownload(GJImg);
     QBuffer buffer(&tempfile);
     buffer.open(QIODevice::ReadOnly);
@@ -125,12 +126,12 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
     newImage.save("dsfsdfsf.jpg");
     buffer.close();
 
+    ui->label->setText(gameName);
     ui->PicLabel->setPixmap(QPixmap::fromImage(newImage));
     ui->UrlLineEdit->setText(srcUrl);
     ui->FileNameLineEdit->setText("["+groupName+"]["+saleDate+"]["+RJNumber+"]"+gameName);
-
-
 }
+
 void RJManager::on_copyFileNameButton_clicked()
 {
     clipboard->setText(ui->FileNameLineEdit->text());
@@ -242,7 +243,14 @@ void RJManager::childitem(QTreeWidgetItem &pitem)
                 ui->statusBar->showMessage(tmpsql);
             }
             else{
-
+                QString RJNumber;
+                QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
+                if((RJNumber=findRJ(rjname,item->text(0)))!=NULL){
+                    srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+RJNumber+".html";
+                    DlsitePageAnalysis(srcUrl);
+                    QString tmpsql ="INSERT INTO TEMP VALUES('"+this->RJNumber+"','"+groupName+"','"+saleDate+"','"+gameName+"','"+item->text(1)+"',"+item->text(2)+",'')";
+                    modeltemp->setQuery(tmpsql);
+                }
             }
 
             qDebug()<<item->text(0);
