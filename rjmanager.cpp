@@ -8,6 +8,7 @@
 #include <QBuffer>
 #include <QDir>
 #include <QFileDialog>
+#include <QSqlQueryModel>
 size_t callbackfunction(void *ptr, size_t size, size_t nmemb, void* userdata)
 {
     int len= size*nmemb;
@@ -22,7 +23,19 @@ RJManager::RJManager(QWidget *parent) :
     ui(new Ui::RJManager)
 {
     ui->setupUi(this);
+
     clipboard = QApplication::clipboard();
+
+    //DB
+    db = QSqlDatabase::addDatabase("QSQLITE");
+    db.setDatabaseName("data.db");
+    db.open()?qDebug()<<"LOGIN!":qDebug()<<"LOGIN FAIL!";
+
+    QSqlQueryModel *model = new QSqlQueryModel;
+    model->setQuery("SELECT * FROM RJ");
+
+    ui->tableView->setModel(model);
+
 }
 
 RJManager::~RJManager()

@@ -7,6 +7,8 @@
 #include <QClipboard>
 #include <QTreeWidget>
 #include <QFileInfo>
+#include <QSqlDatabase>
+
 
 namespace Ui {
 class RJManager;
@@ -50,6 +52,8 @@ private:
     QString gameName;
 
     QClipboard *clipboard;
+
+    QSqlDatabase db;
 };
 
 #endif // RJMANAGER_H
