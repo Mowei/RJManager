@@ -8,7 +8,7 @@
 #include <QTreeWidget>
 #include <QFileInfo>
 #include <QSqlDatabase>
-
+#include <QSqlQueryModel>
 
 namespace Ui {
 class RJManager;
@@ -22,11 +22,12 @@ public:
     explicit RJManager(QWidget *parent = 0);
     ~RJManager();
 
+    QString findRJ(QRegExp rx,QString src);
     QByteArray CurlDownload(QString srcUrl);
     void DlsitePageAnalysis(QString name);
     //Tab2
     void listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent);
-
+    void childitem(QTreeWidgetItem &pitem);
 
 private slots:
     void on_pushButton_clicked();
@@ -54,6 +55,8 @@ private:
     QClipboard *clipboard;
 
     QSqlDatabase db;
+    QSqlQueryModel *modeltemp;
+    QSqlQueryModel *model;
 };
 
 #endif // RJMANAGER_H

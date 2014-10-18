@@ -4,11 +4,11 @@
 #include <curl/curl.h>
 #include <QRegExp>
 #include <QDebug>
-#include<QImageReader>
+#include <QImageReader>
 #include <QBuffer>
 #include <QDir>
 #include <QFileDialog>
-#include <QSqlQueryModel>
+#include <QMessageBox>
 size_t callbackfunction(void *ptr, size_t size, size_t nmemb, void* userdata)
 {
     int len= size*nmemb;
@@ -31,10 +31,12 @@ RJManager::RJManager(QWidget *parent) :
     db.setDatabaseName("data.db");
     db.open()?qDebug()<<"LOGIN!":qDebug()<<"LOGIN FAIL!";
 
-    QSqlQueryModel *model = new QSqlQueryModel;
-    model->setQuery("SELECT * FROM RJ");
+    modeltemp = new QSqlQueryModel;
+    model = new QSqlQueryModel;
+    //model->setQuery("SELECT * FROM RJ");
 
-    ui->tableView->setModel(model);
+    ui->tableView->setModel(modeltemp);
+    ui->tableView_2->setModel(model);
 
 }
 
@@ -65,18 +67,24 @@ QByteArray RJManager::CurlDownload(QString srcUrl){
     return tempfile;
 }
 //----------------------------Tab1----------------------------//
+QString RJManager::findRJ(QRegExp rx,QString src)
+{
+    int pos = 0;
+    if((pos = rx.indexIn(src, pos)) != -1) {
+        return rx.cap(1);
+    }
+    return NULL;
+}
 void RJManager::on_pushButton_clicked()
 {
     QString name,srcUrl;
-    name =ui->RJNameLineEdit->text();
+    name =ui->RJNameLineEdit->text().toUpper();
+    QString RJNumber;
     QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
-
-    int pos = 0;
-    if((pos = rjname.indexIn(name, pos)) != -1) {
-        srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+rjname.cap(1)+".html";
+    if((RJNumber=findRJ(rjname,name))!=NULL){
+        srcUrl ="http://www.dlsite.com/maniax/work/=/product_id/"+RJNumber+".html";
         DlsitePageAnalysis(srcUrl);
     }
-
 
 }
 void RJManager::DlsitePageAnalysis(QString srcUrl){
@@ -89,33 +97,20 @@ void RJManager::DlsitePageAnalysis(QString srcUrl){
     QString GJImg;
     QString str(CurlDownload(srcUrl));
 
+    QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
     QRegExp group("<span itemprop=\"brand\">(.*)</span></a>");
     QRegExp date("\\d\\d(\\d\\d)年(\\d\\d)月(\\d\\d)日");
-    QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
     QRegExp name("id=\"work_name\">(.*)</h1>");
     QRegExp mainImg("<div id=\"work_visual\" style=\"background-image: url\\((.*)\\); width: ");
 
-    pos = 0;
-    if((pos = group.indexIn(str, pos)) != -1) {
-        groupName =group.cap(1);
-    }
+    RJNumber=findRJ(rjname,str);
+    groupName =findRJ(group,str);
+    gameName=findRJ(name,str);
+    GJImg="http:"+findRJ(mainImg,str);
+
     pos = 0;
     if((pos = date.indexIn(str, pos)) != -1) {
         saleDate=date.cap(1)+date.cap(2)+date.cap(3);
-    }
-
-    pos = 0;
-    if((pos = rjname.indexIn(str, pos)) != -1) {
-        RJNumber=rjname.cap(1);
-    }
-
-    pos = 0;
-    if((pos = name.indexIn(str, pos)) != -1) {
-        gameName=name.cap(1);
-    }
-    pos = 0;
-    if((pos = mainImg.indexIn(str, pos)) != -1) {
-        GJImg="http:"+mainImg.cap(1);
     }
 
     qDebug()<<gameName;
@@ -149,8 +144,11 @@ void RJManager::on_copyUrlButton_clicked()
 
 //http://openhome.cc/Gossip/Qt4Gossip/QTreeWidgetQTreeWidgetItem.html
 void RJManager::listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent) {
+
+    bool played =false;
     if(parent.fileName()=="!"){
-        qDebug()<<"true";
+        qDebug() <<"PLAYED";
+        played =true;
     }
 
     QDir dir;
@@ -165,6 +163,7 @@ void RJManager::listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent) {
         QStringList fileColumn;
         fileColumn.append(fileInfo.fileName());
         fileColumn.append(fileInfo.path());
+        fileColumn.append(QString::number(played));
         if (fileInfo.fileName() == "." || fileInfo.fileName() == ".." ); // nothing
         else if(fileInfo.isDir()) {
             QTreeWidgetItem *child = new QTreeWidgetItem(fileColumn);
@@ -174,15 +173,14 @@ void RJManager::listFile(QTreeWidgetItem *parentWidgetItem, QFileInfo &parent) {
         }
         else {
             QTreeWidgetItem *child = new QTreeWidgetItem(fileColumn);
-            QRegExp rjname("(RJ\\d\\d\\d\\d\\d\\d)");
 
-            int pos = 0;
-            if((pos = rjname.indexIn(fileInfo.fileName(), pos)) != -1) {
+            QRegExp rjname("\\[(.*)\\]\\[(.*)\\]\\[(RJ.*)\\](.*)");
+            if((findRJ(rjname,fileInfo.fileName()))!=NULL){
                 child->setCheckState(0, Qt::Checked);
-            }
-            else{
+            }else{
                 child->setCheckState(0, Qt::Unchecked);
             }
+
             parentWidgetItem->addChild(child);
         }
     }
@@ -193,11 +191,17 @@ void RJManager::on_pushButton_3_clicked()
     QString directory = QFileDialog::getExistingDirectory(this,
                                                           tr("Find Files"), QDir::currentPath());
 
+    if(directory.length() == 0) {
+        QMessageBox::information(NULL, tr("Path"), tr("You didn't select any path."));
+        return;
+    }
+
     ui->dirPathLineEdit->setText(directory);
     // 設定欄位名稱
     QStringList columnTitle;
     columnTitle.append("Name");
     columnTitle.append("Path");
+    columnTitle.append("Played");
     ui->treeWidget->setHeaderLabels(columnTitle);
 
     // 查詢的目錄
@@ -220,25 +224,50 @@ void RJManager::on_treeWidget_expanded(const QModelIndex &index)
     for(int i=0;i<ui->treeWidget->columnCount();i++)
         ui->treeWidget->resizeColumnToContents(i);
 }
-void childitem(QTreeWidgetItem &pitem)
+void RJManager::childitem(QTreeWidgetItem &pitem)
 {
-    //qDebug()<<"  1  ";
     for( int i = 0; i < pitem.childCount(); ++i )
     {
         QTreeWidgetItem *item = pitem.child(i);
         if(item->childCount()>0)
             childitem(*item);
-        if(item->checkState(0)==Qt::Checked)
+        if(item->checkState(0)==Qt::Checked){
+
+            QRegExp rjname("\\[(.*)\\]\\[(.*)\\]\\[(RJ.*)\\](.*)");
+            int pos = 0;
+            if((pos = rjname.indexIn(item->text(0), pos)) != -1) {
+                QString tmpsql ="INSERT INTO TEMP VALUES('"+rjname.cap(3)+"','"+rjname.cap(1)+"','"+rjname.cap(4)+"','"+rjname.cap(2)+"','"+item->text(1)+"',"+item->text(2)+",'')";
+                modeltemp->setQuery(tmpsql);
+                qDebug()<<tmpsql;
+                ui->statusBar->showMessage(tmpsql);
+            }
+            else{
+
+            }
+
             qDebug()<<item->text(0);
+        }
     }
 }
 
 void RJManager::on_pushButton_4_clicked()
 {
+    modeltemp->setQuery("DROP TABLE TEMP");
+    modeltemp->setQuery("CREATE TABLE [TEMP] (\
+                        number TEXT PRIMARY KEY NOT NULL,\
+                        groupname VARCHAR,\
+                        name VARCHAR,\
+                        date TEXT,\
+                        filepath  VARCHAR,\
+                        played    BOOLEAN,\
+                        comment   VARCHAR \
+                        );");
+
     for( int i = 0; i < ui->treeWidget->topLevelItemCount(); ++i )
     {
         QTreeWidgetItem *item = ui->treeWidget->topLevelItem( i );
         childitem(*item);
     }
+    modeltemp->setQuery("SELECT * FROM TEMP");
 
 }
